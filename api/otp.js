@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     
     // Cek Token FloX (Opsional, biar sama kayak FloX)
     const token = req.headers['x-paradox-token'];
-    if (token !== 'PARADOX_SUPER_SECRET_998877') {
+    if (token !== 'DHDnFBG1rPvaLwwAAcCh') {
         return res.status(401).json({ error: 'Unauthorized: Token Invalid' });
     }
 
