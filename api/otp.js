@@ -1,11 +1,10 @@
 export default async function handler(req, res) {
-    // Set CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST');
     
-    // Cek Token FloX (Opsional, biar sama kayak FloX)
+    // 1. Token Paradox (SAMAIN SAMA SCRIPT PYTHON)
     const token = req.headers['x-paradox-token'];
-    if (token !== 'DHDnFBG1rPvaLwwAAcCh') {
+    if (token !== 'PARADOX_SUPER_SECRET_998877') {
         return res.status(401).json({ error: 'Unauthorized: Token Invalid' });
     }
 
@@ -21,34 +20,34 @@ export default async function handler(req, res) {
     let nomor = phone;
     if (nomor.startsWith('0')) nomor = '62' + nomor.slice(1);
 
-    const endpoints = [
-        "https://api.bri.co.id/v1/otp",
-        "https://api.misteraladin.com/v1/otp",
-        "https://api.kitabisa.com/v1/otp/send",
-        "https://api.fore.coffee/api/v1/auth/otp",
-        "https://api.janji.co.id/v1/auth/send-otp",
-        "https://api.uwu.id/v1/auth/register",
-        "https://api.ayoconnect.com/v1/otp",
-        "https://api.espay.id/v1/otp"
-    ];
+    // 2. TOKEN FONNTE KAMU
+    const FONNTE_TOKEN = "DHDnFBG1rPvaLwwAAcCh"; 
 
-    let results = [];
-    for (let url of endpoints) {
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' },
-                body: JSON.stringify({ phone: nomor, msisdn: nomor, phone_number: nomor })
-            });
-            results.push({ url, status: response.status });
-        } catch (e) {
-            results.push({ url, status: 'error' });
-        }
+    try {
+        const response = await fetch("https://api.fonnte.com/send", {
+            method: 'POST',
+            headers: {
+                'Authorization': FONNTE_TOKEN,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                'target': nomor,
+                'message': `Kode OTP Anda adalah ${Math.floor(100000 + Math.random() * 900000)}. JANGAN berikan kode ini kepada siapa pun.`
+            })
+        });
+
+        const data = await response.json();
+        
+        return res.status(200).json({ 
+            status: true,
+            message: 'Pesan WA Berhasil Dikirim via Fonnte',
+            fonnte_response: data
+        });
+    } catch (error) {
+        return res.status(500).json({ 
+            status: false,
+            message: 'Gagal mengirim pesan',
+            error: error.message
+        });
     }
-
-    return res.status(200).json({ 
-        status: true,
-        message: 'OTP successfully sent',
-        results: results
-    });
 }
